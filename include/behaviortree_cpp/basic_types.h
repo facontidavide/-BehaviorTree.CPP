@@ -582,7 +582,19 @@ template <typename T = AnyTypeAllowed>
 
 //----------
 
-using PortsList = std::unordered_map<std::string, PortInfo>;
+using PortsList = std::vector<std::pair<std::string, PortInfo>>;
+
+inline const PortInfo* findPortInfo(const PortsList& ports, const std::string& key)
+{
+  for(auto& it : ports)
+  {
+    if(it.first == key)
+    {
+      return &it.second;
+    }
+  }
+  return nullptr;
+}
 
 template <typename T, typename = void>
 struct has_static_method_providedPorts : std::false_type

@@ -91,11 +91,11 @@ inline PortsList SwitchNode<NUM_CASES>::providedPorts()
 {
   static PortsList provided_ports = []() {
     PortsList ports;
-    ports.insert(BT::InputPort<std::string>("variable"));
+    ports.push_back(BT::InputPort<std::string>("variable"));
     for(unsigned i = 1; i <= NUM_CASES; i++)
     {
       auto key = std::string("case_") + std::to_string(i);
-      ports.insert(BT::InputPort<std::string>(key));
+      ports.push_back(BT::InputPort<std::string>(key));
     }
     return ports;
   }();

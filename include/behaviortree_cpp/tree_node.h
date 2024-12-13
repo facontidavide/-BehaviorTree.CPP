@@ -455,30 +455,29 @@ inline Expected<Timestamp> TreeNode::getInputStamped(const std::string& key,
   else
   {
     // maybe it is declared with a default value in the manifest
-    auto port_manifest_it = config().manifest->ports.find(key);
-    if(port_manifest_it == config().manifest->ports.end())
+    const auto* port_info = findPortInfo(config().manifest->ports, key);
+    if(!port_info)
     {
       return nonstd::make_unexpected(StrCat("getInput() of node '", fullPath(),
                                             "' failed because the manifest doesn't "
                                             "contain the key: [",
                                             key, "]"));
     }
-    const auto& port_info = port_manifest_it->second;
     // there is a default value
-    if(port_info.defaultValue().empty())
+    if(port_info->defaultValue().empty())
     {
       return nonstd::make_unexpected(StrCat("getInput() of node '", fullPath(),
                                             "' failed because nor the manifest or the "
                                             "XML contain the key: [",
                                             key, "]"));
     }
-    if(port_info.defaultValue().isString())
+    if(port_info->defaultValue().isString())
     {
-      port_value_str = port_info.defaultValue().cast<std::string>();
+      port_value_str = port_info->defaultValue().cast<std::string>();
     }
     else
     {
-      destination = port_info.defaultValue().cast<T>();
+      destination = port_info->defaultValue().cast<T>();
       return Timestamp{};
     }
   }
@@ -585,7 +584,8 @@ inline Result TreeNode::setOutput(const std::string& key, const T& value)
 
   if constexpr(std::is_same_v<BT::Any, T>)
   {
-    if(config().manifest->ports.at(key).type() != typeid(BT::Any))
+    const auto* port_info = findPortInfo(config().manifest->ports, key);
+    if(port_info && port_info->type() != typeid(BT::Any))
     {
       throw LogicError("setOutput<Any> is not allowed, unless the port "
                        "was declared using OutputPort<Any>");

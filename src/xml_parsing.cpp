@@ -686,8 +686,8 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
 
       if(manifest)
       {
-        auto port_model_it = manifest->ports.find(port_name);
-        if(port_model_it == manifest->ports.end())
+        const auto* port_model = findPortInfo(manifest->ports, port_name);
+        if(!port_model)
         {
           throw RuntimeError(StrCat("a port with name [", port_name,
                                     "] is found in the XML (<", element->Name(),
@@ -697,22 +697,21 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
         }
         else
         {
-          const auto& port_model = port_model_it->second;
           bool is_blacbkboard = port_value.size() >= 3 && port_value.front() == '{' &&
                                 port_value.back() == '}';
           // let's test already if conversion is possible
-          if(!is_blacbkboard && port_model.converter() && port_model.isStronglyTyped())
+          if(!is_blacbkboard && port_model->converter() && port_model->isStronglyTyped())
           {
             // This may throw
             try
             {
-              port_model.converter()(port_value);
+              port_model->converter()(port_value);
             }
             catch(std::exception& ex)
             {
               auto msg = StrCat("The port with name \"", port_name, "\" and value \"",
                                 port_value, "\" can not be converted to ",
-                                port_model.typeName());
+                                port_model->typeName());
               throw LogicError(msg);
             }
           }
@@ -775,7 +774,7 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
     //Check that name in remapping can be found in the manifest
     for(const auto& [name_in_subtree, _] : port_remap)
     {
-      if(manifest->ports.count(name_in_subtree) == 0)
+      if(!findPortInfo(manifest->ports, name_in_subtree))
       {
         throw RuntimeError("Possible typo? In the XML, you tried to remap port \"",
                            name_in_subtree, "\" in node [", config.path, "(type ",
@@ -834,10 +833,10 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
     for(const auto& remap_it : port_remap)
     {
       const auto& port_name = remap_it.first;
-      auto port_it = manifest->ports.find(port_name);
-      if(port_it != manifest->ports.end())
+      const auto* port_info = findPortInfo(manifest->ports, port_name);
+      if(port_info != nullptr)
       {
-        auto direction = port_it->second.direction();
+        auto direction = port_info->direction();
         if(direction != PortDirection::OUTPUT)
         {
           config.input_ports.insert(remap_it);

@@ -679,29 +679,36 @@ TEST(PortTest, Default_Issues_767)
                                                                    "default nullptr"));
 }
 
-TEST(PortTest, DefaultWronglyOverriden)
+TEST(PortTest, AllowEmptyValues)
 {
   BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<NodeWithPorts>("NodeWithPorts");
   factory.registerNodeType<NodeWithDefaultNullptr>("NodeWithDefaultNullptr");
 
-  std::string xml_txt_wrong = R"(
+  std::string xml_txt_empty_number = R"(
+    <root BTCPP_format="4" >
+      <BehaviorTree>
+        <NodeWithPorts in_port_A=""/>
+      </BehaviorTree>
+    </root>)";
+
+  std::string xml_txt_empty_pointer = R"(
     <root BTCPP_format="4" >
       <BehaviorTree>
         <NodeWithDefaultNullptr input=""/>
       </BehaviorTree>
     </root>)";
 
-  std::string xml_txt_correct = R"(
+  std::string xml_txt_empty_default = R"(
     <root BTCPP_format="4" >
       <BehaviorTree>
         <NodeWithDefaultNullptr/>
       </BehaviorTree>
     </root>)";
 
-  // this should throw, because we are NOT using the default,
-  // but overriding it with an empty string instead.
-  // See issue 768 for reference
-  ASSERT_ANY_THROW(auto tree = factory.createTreeFromText(xml_txt_wrong));
-  // This is correct
-  ASSERT_NO_THROW(auto tree = factory.createTreeFromText(xml_txt_correct));
+  // All are correct, as we allow empty strings that will get retrieved as std::nullopt
+  // Note that this is the opposite request on issue 768
+  ASSERT_NO_THROW(auto tree = factory.createTreeFromText(xml_txt_empty_number));
+  ASSERT_NO_THROW(auto tree = factory.createTreeFromText(xml_txt_empty_pointer));
+  ASSERT_NO_THROW(auto tree = factory.createTreeFromText(xml_txt_empty_default));
 }

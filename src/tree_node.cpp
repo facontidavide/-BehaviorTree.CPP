@@ -208,24 +208,28 @@ Expected<NodeStatus> TreeNode::checkPreConditions()
     // Some preconditions are applied only when the node state is IDLE or SKIPPED
     if(_p->status == NodeStatus::IDLE || _p->status == NodeStatus::SKIPPED)
     {
-      // what to do if the condition is true
-      if(parse_executor(env).cast<bool>())
+      auto execute_result = parse_executor(env);
+      // always
+      if(preID == PreCond::ALWAYS)
       {
-        if(preID == PreCond::FAILURE_IF)
-        {
-          return NodeStatus::FAILURE;
-        }
-        else if(preID == PreCond::SUCCESS_IF)
-        {
-          return NodeStatus::SUCCESS;
-        }
-        else if(preID == PreCond::SKIP_IF)
-        {
-          return NodeStatus::SKIPPED;
-        }
+        return nonstd::make_unexpected("");
       }
-      // if the conditions is false
-      else if(preID == PreCond::WHILE_TRUE)
+      auto bool_result = execute_result.cast<bool>();
+      // what to do if the condition is true and the precondition is xx_IF
+      if(bool_result && preID == PreCond::FAILURE_IF)
+      {
+        return NodeStatus::FAILURE;
+      }
+      if(bool_result && preID == PreCond::SUCCESS_IF)
+      {
+        return NodeStatus::SUCCESS;
+      }
+      if(bool_result && preID == PreCond::SKIP_IF)
+      {
+        return NodeStatus::SKIPPED;
+      }
+      // if the condition is false and the precondition is WHILE_TRUE, skip the node
+      if(!bool_result && preID == PreCond::WHILE_TRUE)
       {
         return NodeStatus::SKIPPED;
       }
@@ -476,6 +480,8 @@ std::string toStr<PreCond>(const PreCond& pre)
       return "_skipIf";
     case PreCond::WHILE_TRUE:
       return "_while";
+    case PreCond::ALWAYS:
+      return "_onStart";
     default:
       return "Undefined";
   }

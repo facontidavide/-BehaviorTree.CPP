@@ -397,3 +397,32 @@ TEST(Preconditions, WhileCallsOnHalt)
   ASSERT_EQ(status, BT::NodeStatus::SKIPPED);
   ASSERT_EQ(tree.rootBlackboard()->get<int>("B"), 69);
 }
+
+TEST(Preconditions, OnStart)
+{
+  BehaviorTreeFactory factory;
+  std::array<int, 3> counters;
+  RegisterTestTick(factory, "Test", counters);
+
+  static constexpr auto xml_text = R"(
+  <root BTCPP_format="4">
+    <BehaviorTree ID="Main">
+      <Sequence>
+        <AlwaysSuccess _onStart="B:=69"/>
+        <TestA/>
+        <TestB _successIf="B==69"/>
+        <TestC _onStart="C:=70" _post="B=70"/>
+      </Sequence>
+    </BehaviorTree>
+  </root>
+  )";
+
+  auto tree = factory.createTreeFromText(xml_text);
+  const auto status = tree.tickWhileRunning();
+  ASSERT_EQ(status, NodeStatus::SUCCESS);
+  ASSERT_EQ(tree.rootBlackboard()->get<int>("B"), 70);
+  ASSERT_EQ(tree.rootBlackboard()->get<int>("C"), 70);
+  ASSERT_EQ(counters[0], 1);
+  ASSERT_EQ(counters[1], 0);
+  ASSERT_EQ(counters[2], 1);
+}

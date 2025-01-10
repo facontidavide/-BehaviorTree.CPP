@@ -480,7 +480,7 @@ std::string toStr<PreCond>(const PreCond& pre)
       return "_skipIf";
     case PreCond::WHILE_TRUE:
       return "_while";
-    case PreCond::ALWAYS:
+    case PreCond::ON_START:
       return "_onStart";
     default:
       return "Undefined";

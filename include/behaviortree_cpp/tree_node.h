@@ -50,11 +50,12 @@ enum class PreCond
   SUCCESS_IF,
   SKIP_IF,
   WHILE_TRUE,
+  ON_START,
   COUNT_
 };
 
-static const std::array<std::string, 4> PreCondNames = {  //
-  "_failureIf", "_successIf", "_skipIf", "_while"
+static const std::array<std::string, 5> PreCondNames = {  //
+  "_failureIf", "_successIf", "_skipIf", "_while", "_onStart"
 };
 
 enum class PostCond

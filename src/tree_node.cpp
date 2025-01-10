@@ -210,7 +210,7 @@ Expected<NodeStatus> TreeNode::checkPreConditions()
     {
       auto execute_result = parse_executor(env);
       // always
-      if(preID == PreCond::ALWAYS)
+      if(preID == PreCond::ON_START)
       {
         return nonstd::make_unexpected("");
       }

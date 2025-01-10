@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "behaviortree_cpp/basic_types.h"
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/xml_parsing.h"
 #include "behaviortree_cpp/json_export.h"
@@ -127,6 +128,30 @@ TEST(PortTest, Descriptions)
   }
 
   ASSERT_EQ(status, NodeStatus::FAILURE);  // failure because in_port_B="99"
+}
+
+TEST(PortsTest, NonPorts)
+{
+  std::string xml_txt =
+      R"(
+    <root BTCPP_format="4" >
+        <BehaviorTree ID="MainTree">
+            <Action ID="NodeWithPorts" name="NodeWithPortsName" in_port_B="66" _not_da_port="whateva" _skipIf="true" />
+        </BehaviorTree>
+    </root>)";
+
+  BehaviorTreeFactory factory;
+  factory.registerNodeType<NodeWithPorts>("NodeWithPorts");
+
+  auto tree = factory.createTreeFromText(xml_txt);
+
+  const TreeNode* root = tree.rootNode();
+  ASSERT_NE(root, nullptr);
+  ASSERT_EQ(root->type(), NodeType::ACTION);
+
+  EXPECT_EQ(root->config().other_attributes.size(), 1);
+  ASSERT_TRUE(root->config().other_attributes.contains("_not_da_port"));
+  EXPECT_EQ(root->config().other_attributes.at("_not_da_port"), "whateva");
 }
 
 struct MyType

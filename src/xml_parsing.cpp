@@ -18,6 +18,7 @@
 #include <sstream>
 #include <string>
 #include <typeindex>
+#include "behaviortree_cpp/basic_types.h"
 
 #if defined(_MSVC_LANG) && !defined(__clang__)
 #define __bt_cplusplus (_MSC_VER == 1900 ? 201103L : _MSVC_LANG)
@@ -677,9 +678,13 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
   }
 
   PortsRemapping port_remap;
+  NonPortAttributes other_attributes;
+
   for(const XMLAttribute* att = element->FirstAttribute(); att; att = att->Next())
   {
-    if(IsAllowedPortName(att->Name()))
+    const std::string port_name = att->Name();
+    const std::string port_value = att->Value();
+    if(IsAllowedPortName(port_name))
     {
       const std::string port_name = att->Name();
       const std::string port_value = att->Value();
@@ -721,6 +726,10 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
 
       port_remap[port_name] = port_value;
     }
+    else if(!IsReservedAttribute(port_name))
+    {
+      other_attributes[port_name] = port_value;
+    }
   }
 
   NodeConfig config;
@@ -738,6 +747,7 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
     if(auto script = element->Attribute(attr_name))
     {
       conditions.insert({ ID, std::string(script) });
+      other_attributes.erase(attr_name);
     }
   };
 
@@ -752,6 +762,7 @@ TreeNode::Ptr XMLParser::PImpl::createNodeFromXML(const XMLElement* element,
     AddCondition(config.post_conditions, toStr(post).c_str(), post);
   }
 
+  config.other_attributes = other_attributes;
   //---------------------------------------------
   TreeNode::Ptr new_node;
 

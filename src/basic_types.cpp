@@ -1,4 +1,5 @@
 #include "behaviortree_cpp/basic_types.h"
+#include "behaviortree_cpp/tree_node.h"
 #include "behaviortree_cpp/json_export.h"
 
 #include <cstdlib>
@@ -420,10 +421,6 @@ const std::string& PortInfo::defaultValueString() const
 
 bool IsAllowedPortName(StringView str)
 {
-  if(str == "_autoremap")
-  {
-    return true;
-  }
   if(str.empty())
   {
     return false;
@@ -433,11 +430,26 @@ bool IsAllowedPortName(StringView str)
   {
     return false;
   }
-  if(str == "name" || str == "ID")
+  return !IsReservedAttribute(str);
+}
+
+bool IsReservedAttribute(StringView str)
+{
+  for(const auto& name : PreCondNames)
   {
-    return false;
+    if(name == str)
+    {
+      return true;
+    }
   }
-  return true;
+  for(const auto& name : PostCondNames)
+  {
+    if(name == str)
+    {
+      return true;
+    }
+  }
+  return str == "name" || str == "ID" || str == "_autoremap";
 }
 
 Any convertFromJSON(StringView json_text, std::type_index type)

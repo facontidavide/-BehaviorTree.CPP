@@ -342,6 +342,8 @@ struct Timestamp
 
 [[nodiscard]] bool IsAllowedPortName(StringView str);
 
+[[nodiscard]] bool IsReservedAttribute(StringView str);
+
 class TypeInfo
 {
 public:

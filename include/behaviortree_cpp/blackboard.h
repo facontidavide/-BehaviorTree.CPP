@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <mutex>
+#include <regex>
 
 #include "behaviortree_cpp/basic_types.h"
 #include "behaviortree_cpp/contrib/json.hpp"
@@ -24,6 +25,23 @@ struct StampedValue
   T value;
   Timestamp stamp;
 };
+
+// Helper trait to check if templated type is a std::vector
+template <typename T>
+struct is_vector : std::false_type
+{
+};
+
+template <typename T, typename A>
+struct is_vector<std::vector<T, A>> : std::true_type
+{
+};
+
+// Helper function to check if a demangled type string is a std::vector<..>
+inline bool isVector(const std::string& type_name)
+{
+  return std::regex_match(type_name, std::regex(R"(^std::vector<.*>$)"));
+}
 
 /**
  * @brief The Blackboard is the mechanism used by BehaviorTrees to exchange
@@ -257,8 +275,14 @@ inline void Blackboard::set(const std::string& key, const T& value)
 
     std::type_index previous_type = entry.info.type();
 
+    // Allow mismatch if going from vector -> vector<Any>.
+    auto prev_type_demangled = BT::demangle(entry.value.type());
+    bool previous_is_vector = BT::isVector(prev_type_demangled);
+    bool new_is_vector_any = new_value.type() == typeid(std::vector<Any>);
+
     // check type mismatch
-    if(previous_type != std::type_index(typeid(T)) && previous_type != new_value.type())
+    if(previous_type != std::type_index(typeid(T)) && previous_type != new_value.type() &&
+       !(previous_is_vector && new_is_vector_any))
     {
       bool mismatching = true;
       if(std::is_constructible<StringView, T>::value)

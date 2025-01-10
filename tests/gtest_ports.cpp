@@ -730,3 +730,134 @@ TEST(PortTest, DefaultWronglyOverriden)
   // This is correct
   ASSERT_NO_THROW(auto tree = factory.createTreeFromText(xml_txt_correct));
 }
+
+class OutputVectorStringNode : public SyncActionNode
+{
+public:
+  OutputVectorStringNode(const std::string& name, const NodeConfig& config)
+    : SyncActionNode(name, config)
+  {}
+  static PortsList providedPorts()
+  {
+    return { InputPort<std::string>("string1", "val1", "First string"),
+             InputPort<std::string>("string2", "val2", "Second string"),
+             OutputPort<std::vector<std::string>>("string_vector", "{string_vector}",
+                                                  "Vector of strings.") };
+  }
+
+  NodeStatus tick() override
+  {
+    auto string1 = getInput<std::string>("string1");
+    auto string2 = getInput<std::string>("string2");
+
+    std::vector<std::string> out = { string1.value(), string2.value() };
+    setOutput("string_vector", out);
+    return NodeStatus::SUCCESS;
+  }
+};
+
+class InputVectorStringNode : public SyncActionNode
+{
+public:
+  InputVectorStringNode(const std::string& name, const NodeConfig& config)
+    : SyncActionNode(name, config)
+  {}
+  static PortsList providedPorts()
+  {
+    return { InputPort<std::vector<std::string>>("string_vector", "{string_vector}",
+                                                 "Vector of strings.") };
+  }
+
+  NodeStatus tick() override
+  {
+    std::vector<std::string> expected_vec = { "val1", "val2" };
+    std::vector<std::string> actual_vec;
+
+    if(!getInput<std::vector<std::string>>("string_vector", actual_vec))
+    {
+      return NodeStatus::FAILURE;
+    }
+    if(expected_vec == actual_vec)
+    {
+      return NodeStatus::SUCCESS;
+    }
+    else
+    {
+      return NodeStatus::FAILURE;
+    }
+  }
+};
+
+class InputVectorDoubleNode : public SyncActionNode
+{
+public:
+  InputVectorDoubleNode(const std::string& name, const NodeConfig& config)
+    : SyncActionNode(name, config)
+  {}
+  static PortsList providedPorts()
+  {
+    return { InputPort<std::vector<double>>("double_vector", "{double_vector}",
+                                            "Vector of doubles.") };
+  }
+
+  NodeStatus tick() override
+  {
+    std::vector<double> expected_vec = { 1.0, 2.0 };
+    std::vector<double> actual_vec;
+
+    if(!getInput<std::vector<double>>("double_vector", actual_vec))
+    {
+      return NodeStatus::FAILURE;
+    }
+    if(expected_vec == actual_vec)
+    {
+      return NodeStatus::SUCCESS;
+    }
+    else
+    {
+      return NodeStatus::FAILURE;
+    }
+  }
+};
+
+TEST(PortTest, VectorAny)
+{
+  BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<OutputVectorStringNode>("OutputVectorStringNode");
+  factory.registerNodeType<InputVectorStringNode>("InputVectorStringNode");
+  factory.registerNodeType<InputVectorDoubleNode>("InputVectorDoubleNode");
+
+  std::string xml_txt_good = R"(
+    <root BTCPP_format="4" >
+      <BehaviorTree>
+        <Sequence name="root_sequence">
+          <OutputVectorStringNode/>
+          <InputVectorStringNode/>
+        </Sequence>
+      </BehaviorTree>
+    </root>)";
+
+  std::string xml_txt_bad = R"(
+    <root BTCPP_format="4" >
+      <BehaviorTree>
+        <Sequence name="root_sequence">
+          <OutputVectorStringNode/>
+          <InputVectorDoubleNode double_vector="{string_vector}"/>
+        </Sequence>
+      </BehaviorTree>
+    </root>)";
+
+  // Test that setting and retrieving a vector<string> works.
+  BT::Tree tree;
+  ASSERT_NO_THROW(tree = factory.createTreeFromText(xml_txt_good));
+
+  BT::NodeStatus status;
+  ASSERT_NO_THROW(status = tree.tickOnce());
+  ASSERT_EQ(status, NodeStatus::SUCCESS);
+
+  // Test that setting a port as a vector<string> and attempting to retrie it as a vector<double> fails.
+  ASSERT_NO_THROW(tree = factory.createTreeFromText(xml_txt_bad));
+
+  ASSERT_NO_THROW(status = tree.tickOnce());
+  ASSERT_EQ(status, NodeStatus::FAILURE);
+}

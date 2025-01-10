@@ -217,13 +217,18 @@ std::shared_ptr<Blackboard::Entry> Blackboard::createEntryImpl(const std::string
   if(storage_it != storage_.end())
   {
     const auto& prev_info = storage_it->second->info;
+    auto prev_type_demangled = BT::demangle(prev_info.type());
+    // Allow mismatch if going from vector -> vector<Any>.
+    bool previous_is_vector = BT::isVector(prev_type_demangled);
+    bool new_is_vector_any = info.type() == typeid(std::vector<Any>);
+
     if(prev_info.type() != info.type() && prev_info.isStronglyTyped() &&
-       info.isStronglyTyped())
+       info.isStronglyTyped() && !(previous_is_vector && new_is_vector_any))
     {
       auto msg = StrCat("Blackboard entry [", key,
                         "]: once declared, the type of a port"
                         " shall not change. Previously declared type [",
-                        BT::demangle(prev_info.type()), "], current type [",
+                        prev_type_demangled, "], current type [",
                         BT::demangle(info.type()), "]");
 
       throw LogicError(msg);

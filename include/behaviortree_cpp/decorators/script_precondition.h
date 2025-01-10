@@ -48,20 +48,23 @@ private:
       throw RuntimeError("Missing parameter [else] in Precondition");
     }
 
+    // Only check the 'if' script if we haven't started ticking the children yet.
     Ast::Environment env = { config().blackboard, config().enums };
-    if(_executor(env).cast<bool>())
-    {
-      auto const child_status = child_node_->executeTick();
-      if(isStatusCompleted(child_status))
-      {
-        resetChild();
-      }
-      return child_status;
-    }
-    else
+    bool tick_children =
+        _children_running || (_children_running = _executor(env).cast<bool>());
+
+    if(!tick_children)
     {
       return else_return;
     }
+
+    auto const child_status = child_node_->executeTick();
+    if(isStatusCompleted(child_status))
+    {
+      resetChild();
+      _children_running = false;
+    }
+    return child_status;
   }
 
   void loadExecutor()
@@ -89,6 +92,7 @@ private:
 
   std::string _script;
   ScriptFunction _executor;
+  bool _children_running = false;
 };
 
 }  // namespace BT

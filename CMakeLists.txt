@@ -30,6 +30,7 @@ option(BTCPP_EXAMPLES   "Build tutorials and examples" ON)
 option(BTCPP_UNIT_TESTS "Build the unit tests" ON)
 option(BTCPP_GROOT_INTERFACE "Add Groot2 connection. Requires ZeroMQ" ON)
 option(BTCPP_SQLITE_LOGGING "Add SQLite logging." ON)
+option(CMAKE_BUILD "Build using CMAKE" OFF)
 
 option(USE_V3_COMPATIBLE_NAMES  "Use some alias to compile more easily old 3.x code" OFF)
 
@@ -67,6 +68,14 @@ elseif( CATKIN_DEVEL_PREFIX OR CATKIN_BUILD_BINARY_PACKAGE)
     message(STATUS "------------------------------------------")
     include(cmake/catkin_build.cmake)
     set(catkin_FOUND TRUE)
+
+elseif( CMAKE_BUILD )
+
+    message(STATUS "------------------------------------------")
+    message(STATUS "BehaviourTree is being built using CMAKE.")
+    message(STATUS "------------------------------------------")
+    include(cmake/cmake_build.cmake)
+
 else()
     message(STATUS "------------------------------------------")
     message(STATUS "BehaviourTree is being built with conan.")
@@ -214,6 +223,12 @@ endif()
 
 if(BTCPP_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if( CMAKE_BUILD )
+    message(STATUS "Ensuring everything gets installed into '/usr/local/' as the Lord intended")
+    set(BTCPP_LIB_DESTINATION ${CMAKE_INSTALL_PREFIX}/${BTCPP_LIB_DESTINATION})
+    set(BTCPP_INCLUDE_DESTINATION ${CMAKE_INSTALL_PREFIX}/${BTCPP_INCLUDE_DESTINATION})
 endif()
 
 ######################################################

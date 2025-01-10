@@ -84,6 +84,18 @@ If you want to build in a [pixi](https://pixi.sh/) project (conda virtual enviro
 ```
 pixi run build
 ```
+If you want to generate a standalone behaviortree_cpp debian that you can install and link your project against,
+- Clone the BehaviorTreee.CPP repo
+- cd into the cloned repo
+- run the following commands:
+```
+cmake -S . -B build -DCMAKE_BUILD=ON
+cmake --build build/ -j{Number_of_cores} --target package
+```
+Replace {Number_of_cores} with how many cores you would like to use to build. 
+
+- If built succesfully, it should generate a ```.deb``` file inside the build folder.
+- You can install this debian in any container or environment using ```apt install /path/to/.deb```
 
 If you want to use BT.CPP in your application, please refer to the
 example here: https://github.com/BehaviorTree/btcpp_sample .

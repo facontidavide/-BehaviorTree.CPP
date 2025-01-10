@@ -113,6 +113,7 @@ list(APPEND BT_SOURCE
     src/controls/if_then_else_node.cpp
     src/controls/fallback_node.cpp
     src/controls/parallel_node.cpp
+    src/controls/reactive_parallel_node.cpp
     src/controls/parallel_all_node.cpp
     src/controls/reactive_sequence.cpp
     src/controls/reactive_fallback.cpp

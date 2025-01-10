@@ -52,54 +52,38 @@ NodeStatus RetryNode::tick()
   bool do_loop = try_count_ < max_attempts_ || max_attempts_ == -1;
   setStatus(NodeStatus::RUNNING);
 
-  while(do_loop)
+  if (do_loop)
   {
-    NodeStatus prev_status = child_node_->status();
-    NodeStatus child_status = child_node_->executeTick();
+    NodeStatus child_state = child_node_->executeTick();
 
-    switch(child_status)
+    switch (child_state)
     {
-      case NodeStatus::SUCCESS: {
+      case NodeStatus::SUCCESS:
+      {
         try_count_ = 0;
         resetChild();
-        return (NodeStatus::SUCCESS);
+        return NodeStatus::SUCCESS;
       }
 
-      case NodeStatus::FAILURE: {
+      case NodeStatus::FAILURE:
+      {
         try_count_++;
-        do_loop = try_count_ < max_attempts_ || max_attempts_ == -1;
-
         resetChild();
-
-        // Return the execution flow if the child is async,
-        // to make this interruptable.
-        if(requiresWakeUp() && prev_status == NodeStatus::IDLE && do_loop)
-        {
-          emitWakeUpSignal();
-          return NodeStatus::RUNNING;
-        }
+        return NodeStatus::RUNNING;
       }
       break;
 
-      case NodeStatus::RUNNING: {
+      case NodeStatus::RUNNING:
+      {
         return NodeStatus::RUNNING;
       }
 
-      case NodeStatus::SKIPPED: {
-        // to allow it to be skipped again, we must reset the node
-        resetChild();
-        // the child has been skipped. Slip this too
-        return NodeStatus::SKIPPED;
-      }
-
-      case NodeStatus::IDLE: {
-        throw LogicError("[", name(), "]: A children should not return IDLE");
+      case NodeStatus::IDLE:
+      {
+        throw LogicError("A child node must never return IDLE");
       }
     }
   }
-
-  try_count_ = 0;
-  return NodeStatus::FAILURE;
 }
 
 }  // namespace BT

@@ -49,7 +49,7 @@ enum class PreCond
   SUCCESS_IF,
   SKIP_IF,
   WHILE_TRUE,
-  ALWAYS,
+  ON_START,
   COUNT_
 };
 
